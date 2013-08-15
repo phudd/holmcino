@@ -1,0 +1,7 @@
+Django==1.5.1
+base58==0.2.1
+dj-database-url==0.2.2
+django-json-rpc==0.6.1
+gunicorn==17.5
+psycopg2==2.5.1
+wsgiref==0.1.2
