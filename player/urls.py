@@ -5,8 +5,8 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', 'project.views.home', name='home'),
-    url(r'^player/', include('player.urls', app_name='player')),
+    url(r'^$', 'player.views.home', name='player_home'),
+    url(r'^login$', 'player.views.login', name='player_login'),
 	
     # Examples:
     # url(r'^$', 'project.views.home', name='home'),

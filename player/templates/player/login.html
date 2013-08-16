@@ -1,9 +1,14 @@
 <!doctype HTML>
 <html>
 	<head>
-		<title>Login!</title>
+		<title>Log In Now!</title>
 	</head>
 	<body>
-		This is login page, fool!
+		Quote: "{{ quote }}"
+		<form action="{% url 'player_login' %}" method="POST">
+			{% csrf_token %}
+			{{ form.as_p }}
+			<button type="submit">Start Playing</button>
+		</form>
 	</body>
 </html>
