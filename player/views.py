@@ -6,13 +6,13 @@ import datetime
 from bitcoin import Bitcoin
 from jsonrpc.proxy import ServiceProxy
 from json import dumps
+from bitcoin import Bitcoin
 
 # Create your views here.
 
 class LoginForm(forms.Form):
     payout_address = forms.CharField(max_length=37,min_length=32,required=True,label="Payout Address")
 	
-
 def login(request):
     quote = 'Ergggg!'
     err = None
@@ -20,8 +20,8 @@ def login(request):
         loginForm = LoginForm(request.POST)
         if loginForm.is_valid():
             clean = loginForm.cleaned_data
-            el = ServiceProxy(settings.BITCOIN_URL)
-            addressInfo = el.validateaddress(clean['payout_address'])
+            btc = Bitcoin(settings.BITCOIN_URL)
+            addressInfo = btc.validateaddress(clean['payout_address'])
             quote = dumps(addressInfo)
             # do some things here
     else:
