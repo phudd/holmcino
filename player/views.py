@@ -3,10 +3,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 import datetime
-from bitcoin import Bitcoin
-from jsonrpc.proxy import ServiceProxy
 from json import dumps
-from bitcoin import Bitcoin
 
 # Create your views here.
 
@@ -20,8 +17,7 @@ def login(request):
         loginForm = LoginForm(request.POST)
         if loginForm.is_valid():
             clean = loginForm.cleaned_data
-            btc = Bitcoin(settings.BITCOIN_URL)
-            addressInfo = btc.validateaddress(clean['payout_address'])
+            addressInfo = settings.BITCOIN_SERVICE.validateaddress(clean['payout_address'])
             quote = dumps(addressInfo)
             # do some things here
     else:

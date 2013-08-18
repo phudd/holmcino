@@ -3,7 +3,7 @@ import uuid
 import json
 from django.conf import settings
 
-class Bitcoin(object):
+class ClientProxy(object):
     """ This is a proxy object for a json-rpc service.  I initially borrowed from 
         django-json-rpc, but eventually departed to create my own proxy.
     

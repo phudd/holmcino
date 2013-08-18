@@ -1,6 +1,7 @@
 # Django settings for project project.
 import os
 import dj_database_url
+from jsonrpcproxy import ClientProxy
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -16,6 +17,7 @@ DATABASES = {
 }
 
 BITCOIN_URL = os.getenv('BITCOIN_URL')
+BITCOIN_SERVICE = ClientProxy(BITCOIN_URL)
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
