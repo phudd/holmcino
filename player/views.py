@@ -11,13 +11,14 @@ class LoginForm(forms.Form):
     payout_address = forms.CharField(max_length=37,min_length=32,required=True,label="Payout Address")
 	
 def login(request):
+    btc = settings.BITCOIN_SERVICE
     quote = 'Ergggg!'
     err = None
     if request.method == 'POST':
         loginForm = LoginForm(request.POST)
         if loginForm.is_valid():
             clean = loginForm.cleaned_data
-            addressInfo = settings.BITCOIN_SERVICE.validateaddress(clean['payout_address'])
+            addressInfo = btc.validateaddress(clean['payout_address'])
             quote = dumps(addressInfo)
             # do some things here
     else:

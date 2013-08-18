@@ -4,19 +4,30 @@ import json
 from django.conf import settings
 
 class ClientProxy(object):
-    """ This is a proxy object for a json-rpc service.  I initially borrowed from 
-        django-json-rpc, but eventually departed to create my own proxy.
+    """ This is a proxy object for remote services that implement JSON-RPC 2.0
     
-        Once initialized, you can call any function freely.  Errors raise exceptions.  Other
-        kinds of responses are returned unmolested.  The overhead fields are thrown away.
+    Once initialized you can call any method of the service just like you would if it 
+    were a member function of the object.  For example:
+    
+        service = ClientProxy('https://some.dom/service_uri')
+        var = service.somefunc(var1, var2)
+    
+    Responses are returned already decoded, and without any of the RPC overhead data.
+    
+    Errors raise exceptions.  The numeric code of the message is added as a 'code' attribute
+    of the exception.
+    
+    If you pass one of more named arguments to the service, then only the named arguments 
+    are sent to the remote method.  In this case, a single dictionary object is sent as the
+    param, instead of an array.
     """
+    
     def __init__(self, url):
+        """ Initialize the proxy with a URL to the remote service."""
         self._url = url
         
     def __getattr__(self, name):
-        """ Attributes are all functions.  Build a function with the right closure, so it
-            can be called with the desired parameters.
-        """
+        """ Returns a closure you can use to call the intended remote method."""
         def callfunc(*args, **kwargs):
             jsoncall = {
                 'jsonrpc':"2.0",
@@ -25,18 +36,21 @@ class ClientProxy(object):
                 'params': kwargs if len(kwargs) else args
             }
             response = urllib.urlopen(self._url, json.dumps(jsoncall)).read()
-            response = json.loads(response)
+            self._lastResponse = response
             return self.parseResponse(response)
 
         return callfunc
                     
     def parseResponse(self, response):
+        response = json.loads(response)
         if response.get(u'error') != None:
-            code = response[u'error'].get(u'code', 'no-code')
-            code = str(code)
+            code = response[u'error'].get(u'code', 0)
+            code = int(code)
             message = response[u'error'].get(u'message', 'no-message')
             
-            raise Exception( code + ': ' + message)
+            ex = Exception(str(code) + ': ' + message)
+            ex.code = code
+            raise ex
         else:
             return response.get(u'result')
     
