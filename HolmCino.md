@@ -75,3 +75,9 @@ Test Data
 ### Payout Addresses ("Payouts")
 
 - murVPyqbVrQiGom1Pyd66zD1srxxNEHbHx
+
+Test Cases
+----------
+
+Attempt to use an existing deposit address as a payout address
+Attempt to log in without a password to an account that can't be paid out because of pending confirmations.

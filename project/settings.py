@@ -17,6 +17,8 @@ DATABASES = {
 }
 
 BITCOIN_URL = os.getenv('BITCOIN_URL')
+DEPOSIT_ACCOUNT = os.getenv('DEPOSIT_ACCOUNT')
+
 BITCOIN_SERVICE = ClientProxy(BITCOIN_URL)
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
@@ -120,7 +122,6 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'project',
     'player',
-    'bitcoin',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
