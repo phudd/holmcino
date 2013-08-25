@@ -16,8 +16,8 @@ DATABASES = {
     'default': dj_database_url.config()
 }
 
-BITCOIN_URL = os.getenv('BITCOIN_URL')
-DEPOSIT_ACCOUNT = os.getenv('DEPOSIT_ACCOUNT')
+BITCOIN_URL = os.getenv('BITCOIN_URL', 'Payouts')
+DEPOSIT_ACCOUNT = os.getenv('DEPOSIT_ACCOUNT', 'Customers')
 
 BITCOIN_SERVICE = ClientProxy(BITCOIN_URL)
 

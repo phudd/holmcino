@@ -4,8 +4,8 @@
 		<title>Log In Now!</title>
 	</head>
 	<body>
-		{% if addressInfo != None %}
-			Quote: "{{ addressInfo }}"		
+		{% if error %}
+			{{error}}
 		{% endif %}
 		<form action="{% url 'player_login' %}" method="POST">
 			{% csrf_token %}

@@ -1,3 +1,4 @@
+import os
 import time
 from hashlib import sha256
 from django.db import models
@@ -14,16 +15,22 @@ class Player(models.Model):
     
     @staticmethod
     def createFromPayoutAddress(address):
-        genstr = settings.SECRET_KEY + str(time.time()) # float down to 10-usec
-        genstr = sha256(genstr).digest()
-        genstr = base58.b58encode(genstr)
-        depAddr = settings.BITCOIN_SERVICE.getaccountaddress(settings.DEPOSIT_ACCOUNT)
+        """Create a player for the given payout address.
         
-        plyr = Player(player_id=genstr[:5],payout_address=address,deposit_address=depAddr,password=genstr[-5:])
-        plyr.save()
+        Does not save the new player ... simply returns it.  You must still call save().
+        
+        It generates a random id, and password, and creates a new deposit address too.
+        """
+        pid = generateRandomString(8)
+        pw = generateRandomString(8)
+        
+        plyr = Player( player_id=pid, payout_address=address, password=pw)
         return plyr
-
+        
 class Profile(models.Model):
     player = models.ForeignKey(Player,primary_key=True)
     name = models.CharField(max_length=32,null=True)
-    
+
+def generateRandomString(len=8):
+    return base58.b58encode(sha256(os.urandom(512)).digest())[:len]
+
