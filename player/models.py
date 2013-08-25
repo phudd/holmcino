@@ -9,23 +9,18 @@ import base58
 
 class Player(models.Model):
     player_id = models.CharField(max_length=16,primary_key=True)
-    payout_address = models.CharField(max_length=34,unique=True)
-    deposit_address = models.CharField(max_length=34,unique=True)
+    name = models.CharField(max_length=32,unique=True)
+    payout_address = models.CharField(max_length=34,null=True,blank=True)
+    deposit_address = models.CharField(max_length=34,null=True,blank=True)
     password = models.CharField(max_length=32)
     
     @staticmethod
-    def createFromPayoutAddress(address):
-        """Create a player for the given payout address.
-        
-        Does not save the new player ... simply returns it.  You must still call save().
-        
-        It generates a random id, and password, and creates a new deposit address too.
-        """
-        pid = generateRandomString(8)
-        pw = generateRandomString(8)
-        
-        plyr = Player( player_id=pid, payout_address=address, password=pw)
+    def createFromUsername(username):
+        pid = generateRandomString()
+        pw = generateRandomString()
+        plyr = Player( player_id=pid, name=username, password=pw )
         return plyr
+        
         
 class Profile(models.Model):
     player = models.ForeignKey(Player,primary_key=True)

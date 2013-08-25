@@ -1,0 +1,17 @@
+<!doctype HTML>
+<html>
+	<head>
+		<title>Create Player Account!</title>
+	</head>
+	<body>
+		{% if error %}
+			{{error}}
+		{% endif %}
+		<form action="{% url 'player_create' %}" method="POST">
+			{% csrf_token %}
+			{{ form.as_p }}
+			<button type="reset">Clear</button>
+			<button type="submit">Create User</button>
+		</form>
+	</body>
+</html>
