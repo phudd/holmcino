@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 from hashlib import sha256
 import traceback
 import datetime
@@ -26,6 +27,8 @@ We might need the idea of a Player, a Game, and a PlayerSeat.
     check their balance, and who-knows-what-else?
     PlayerSeats are the player's "spot" on the game.  Might not need this...but maybe will
     Games can come and go, and players can be added and removed from them.
+    
+    Need a separate diceState, so we know when we're rolling.
 """
 
 theTable = None
@@ -36,33 +39,127 @@ class CrapsTable(object):
         self.delegate = GameDelegate()
         self.state = "setting up"
         self.players = {}
+        self.bets = {}
         self.nonce = None
-        self.loop.add_timeout(datetime.timedelta(seconds=2), self.setup)
+        self.loop.add_timeout(datetime.timedelta(seconds=1), self.setup)
     
     def setup(self):
         self.chat('server', 'setting up')
         self.nonce = self.generateRandomString()
         self.chat('server', self.nonce)
         self.state = "coming out"
-        
+        self.point = 0
+    
     def addPlayer(self, player):
-        self.players[player.userInfo['id']] = player
+        pid = player.userInfo['id']
+        if not self.players.has_key(pid):
+            self.players[pid] = player
         player.write_message("You have joined a craps game!")        
     
     def removePlayer(self, player):
         pid = player.userInfo['id']
-        if self.players.get(pid):
+        if self.players.has_key(pid):
             del self.players[pid]
     
     def chat(self, name, text):
         notification = "chat {0} {1}".format(name, text)
-        for pname, player in self.players.iteritems():
-            player.write_message(notification)
+        self.tellAllPlayers(notification)
     
+    def bet(self, userId, betType, amount):
+        if not self.bets.has_key(userId):
+            self.bets[userId] = {}
+        userBets = self.bets[userId]
+        
+        amount = float(amount)
+        if math.isnan(amount):
+            amount = 0.0
+        
+        if amount > 0.0:
+            newBet = 0.0
+            if betType == 'pass':
+                oldBet = userBets.get('pass', 0.0)
+                newBet = oldBet + amount
+                userBets['pass'] = newBet
+            
+            notification = "{} {} {} {}".format(userId, betType, amount, newBet)
+            self.tellAllPlayers(notification)
+    
+    def roll(self, player, pnonce=None):
+        # Check the state, Roll the dice, and compute the payouts
+        # For each player compute:
+        #   changes
+        #   payouts
+        #   new state
+        if self.state == 'setting up':
+            player.write_message("You can not roll the dice while we're still setting up the game.")
+            return False
+        
+        # In a multi-player game, we would have to check to make sure this player has the dice
+        
+        # Also, we have to delegate out the rolls...
+        if not pnonce:
+            pnonce = self.generateRandomString()
+        (total, d1, d2) = self.roll2d6(self.nonce, pnonce)
+        self.tellAllPlayers("{} + {} = {}".format(d1, d2, total))
+        
+        allNewStates = {}
+        
+        for pid, pbets in self.bets.iteritems():
+            changes = {}
+            newstate = {}
+            
+            for betType, betAmount in pbets.iteritems():
+                if betType == 'pass':
+                    if self.state == 'coming out':
+                        if total in [7,11]:
+                            changes['pass'] = 2*betAmount
+                        if total in [2,3,12]:
+                            changes['pass'] = 0
+                    if self.state == 'point':
+                        if total == self.point:
+                            changes['pass'] = 2*betAmount
+                        if total == 7:
+                            changes['pass'] = 0
+                    if not changes.has_key('pass'):
+                        """If there were no changes for the pass line, carry it over."""
+                        newstate['pass'] = betAmount
+            
+            allNewStates['pid'] = newstate
+            self.tellAllPlayers( json.dumps({
+                'pid': pid,
+                'changes': changes,
+                'state': newstate,
+            }) )
+        self.bets = allNewStates                        
+        
+        if self.state == 'coming out' and total not in [2,3,7,11,12]:
+            self.tellAllPlayers('point is {}'.format(total))
+            self.point = total
+            self.state = 'point'
+        elif self.state == 'point' and total == 7:
+            self.tellAllPlayers('Seven Out!')
+            self.point = 0
+            self.state = 'coming out'
+        elif self.state == 'point' and total == self.point:
+            self.point = 0
+            self.state = 'coming out'
+        self.nonce = self.generateRandomString()
+                        
+            
+    def tellAllPlayers(self, message):
+        for pname, player in self.players.iteritems():
+            player.write_message(message)
+        
     def generateRandomString(self, len=8):
         rand = os.urandom(512)
         return base58.b58encode(sha256(rand).digest())[:len]
-
+    
+    def roll2d6(self, gameNonce, playerNonce):
+        rand = sha256(gameNonce+playerNonce).hexdigest()
+        d1 = ( int(rand[0:16],16) % 6 ) + 1
+        d2 = ( int(rand[16:32],16) % 6 ) + 1
+        return ( d1+d2, d1, d2 )
+        
 class CrapsPlayer(websocket.WebSocketHandler):
     userInfo = {}
     
@@ -77,7 +174,7 @@ class CrapsPlayer(websocket.WebSocketHandler):
         self.write_message("player {0}".format(json.dumps(self.userInfo)))
         theTable.addPlayer(self)
 
-    def close(self):
+    def on_close(self):
         global theTable
         theTable.removePlayer(self)
         
@@ -87,6 +184,10 @@ class CrapsPlayer(websocket.WebSocketHandler):
             (command, params) = message.split(' ', 1)
             if command == 'say':
                 theTable.chat(self.userInfo['id'], params)
+            if command == 'bet.pass':
+                theTable.bet(self.userInfo['id'], "pass", params)
+            if command == 'roll':
+                theTable.roll(self, params)
         except Exception as ex:
             self.write_message("error: {}\n{}".format(str(ex), traceback.format_exc()))
 
