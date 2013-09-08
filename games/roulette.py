@@ -14,9 +14,6 @@ class Wager(object):
     position = None
     """The name of the position.  This name is the hook to the UI commands"""
     
-    lose = 1.0
-    """How much of the bet is lost on a losing number.  Is normally 1 (all) but can be less."""
-    
     win = 1.0
     """The payout percentage when winning.  1 pays 100% (double your money).
     We phrase it this way because winning bets typically remain on the board, so this is
@@ -25,7 +22,7 @@ class Wager(object):
     amount = 0.0
     """The current amount the player has bet on this wager."""
     
-    def __init__(self, position, points, win, lose=1.0):
+    def __init__(self, position, points, win):
         """The initializer gives us all of the required information to handle the given wager.
         
         params:
@@ -33,15 +30,11 @@ class Wager(object):
             position - The name of the position on the board.  This name will be used by the 
                 UI to address bets to the right position of the layout.  ("Red 32", "Street 1 2 3", etc.)
             win - A float that says how much to pay the player on a win
-            lose - The amount (0.0-1.0) that is lost on a losing roll.
         """
         self.points = [str(p) for p in points]
         self.position = position
         self.win = float(win)        
         if self.win < 0.0 or math.isnan(self.win):
-            raise ValueError
-        self.lose = float(lose)
-        if self.lose < 0.0 or self.lose > 1.0 or math.isnan(self.lose):
             raise ValueError
     
     def add(self, amount):
@@ -71,14 +64,26 @@ class Wager(object):
             retval = self.amount * self.win
             riding = self.amount
         else:
-            retval = (self.amount * self.lose) * -1
+            retval = self.amount * -1
             riding = 0.0
         
         self.amount = riding
         
         return (retval, riding)
-        
+
+class Partage(Wager):
+    """The partage wager returns half on 0, 00, or 000."""
+    def resolve(self, point):
+        if str(point) in ["0", "00", "000"]:
+            retval = (self.amount / 2) * -1
+            riding = self.amount / 2
+            self.amount = riding
+            return (retval, riding)
+        else:
+            return super(Partage, self).resolve(point)
+    
 class RouletteSeat(object):
     """The entire layout, as seen by a single person."""
     pass
+
 
