@@ -50,7 +50,7 @@ class Wager(object):
         return (amount, self.amount)
     
     def resolve(self, point):
-        """Returns a tuple of two floats (won/lost, ride).  
+        """Returns a tuple of two floats and a string (won/lost, ride, position).
         
         The first is either a positive number (a win) or a negative number (a loss) and indicates
         how much to add/subtract from the user's account.
@@ -69,7 +69,7 @@ class Wager(object):
         
         self.amount = riding
         
-        return (retval, riding)
+        return (retval, riding, self.position)
 
 class Partage(Wager):
     """The partage wager returns half on 0, 00, or 000."""
@@ -78,10 +78,10 @@ class Partage(Wager):
             retval = (self.amount / 2) * -1
             riding = self.amount / 2
             self.amount = riding
-            return (retval, riding)
+            return (retval, riding, self.position)
         else:
             return super(Partage, self).resolve(point)
-    
+
 class RouletteSeat(object):
     """The entire layout, as seen by a single person."""
     pass
