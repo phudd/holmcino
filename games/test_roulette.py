@@ -73,3 +73,6 @@ class TestRouletteWagers(unittest.TestCase):
 		# half again on 000
 		self.assertEqual( (-.625,.625,"Red"), w.resolve("000") )
 	
+	def test_seat(self):
+		s = roulette.Seat()
+	

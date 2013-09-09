@@ -82,8 +82,75 @@ class Partage(Wager):
         else:
             return super(Partage, self).resolve(point)
 
-class RouletteSeat(object):
-    """The entire layout, as seen by a single person."""
-    pass
+def europeanLayout():
+    """Returns an array of wager positions for a European game.  
+    
+    Single zero, partage, no imprison."""
+    retval = []
+    red = [1, 3, 5, 7, 9, 12, 14, 18, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+    
+    # All those even-payout partage bets
+    retval.append( Partage("Red", red, 1) )
+    retval.append( Partage("Black", [p for p in range(1,37) if p not in red], 1) )
+    retval.append( Partage("Odd", [p for p in range(1,37,2)], 1) )
+    retval.append( Partage("Even", [p for p in range(2,37,2)], 1) )
+    retval.append( Partage("First 18", range(1,19), 1) )
+    retval.append( Partage("Second 18", range(19,37), 1) )
+    
+    # thirds
+    retval.append( Wager("First 12", range(1, 13), 2) )
+    retval.append( Wager("Second 12", range(13,25), 2) )
+    retval.append( Wager("Third 12", range(25,37), 2) )
+    
+    # six-line
+    for streetEnd in range(6,37,3):
+        streetStart = streetEnd-5
+        w = Wager("Line {}-{}".format(streetStart, streetEnd), range(streetStart,streetEnd+1), 5)
+        retval.append(w)
+    
+    # All the corners
+    # Look at a layout picture, and this will make more sense
+    for ctr in [p for p in range(5,37) if p%3 != 1]: # 5 6 8 9 ...
+        corner = [ctr-4, ctr-3, ctr-1, ctr]
+        name = "Corner {0} {1} {2} {3}".format(*corner)
+        retval.append( Wager(name, corner, 8) )
+    
+    # three-numbered streets
+    for streetEnd in range(3,37,3):
+        streetStart = streetEnd-2
+        w = Wager("Street {}-{}".format(streetStart, streetEnd), range(streetStart,streetEnd+1), 11)
+        retval.append(w)
 
-
+    # Horizontal Splits
+    for pos in [p for p in range(1,36) if p%3]:
+        pair = [pos, pos+1]
+        name = "Split {0} {1}".format(*pair)
+        retval.append( Wager(name, pair, 17) )
+    
+    # Vertical Splits
+    for pos in range(1,34):
+        pair = [pos, pos+3]
+        name = "Split {0} {1}".format(*pair)
+        retval.append( Wager(name, pair, 17) )
+    
+    # All of the single-number bets
+    redWagers = [ Wager("Red {}".format(p), [p], 35) for p in red ]
+    blackWagers = [ Wager("Black {}".format(p), [p], 35) for p in range(1,37) if p not in red ]
+    retval += redWagers + blackWagers
+    
+    # And the number that, all by itself, imparts profit
+    retval.append( Wager("0", ["0"], 35) )
+    
+class Seat(object):
+    """The seat manages one player's place in the game. """
+    
+    def __init__(self, factory=europeanLayout, limit=1000):
+        self.limit = limit
+        self.positions = factory()
+        self.amount = 0.0 # the current total the player has on the board
+        self.won = 0
+        self.lost = 0
+        
+    def bet(position, chips):
+        pass
+        
