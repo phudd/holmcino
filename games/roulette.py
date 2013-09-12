@@ -1,3 +1,4 @@
+import sys
 import math
 from games.exceptions import *
 
@@ -37,6 +38,9 @@ class Wager(object):
         if self.win < 0.0 or math.isnan(self.win):
             raise ValueError
     
+    def __str__(self):
+        return "{} {}:1".format(self.position, self.win)
+        
     def add(self, amount):
         """Add the given amount to the bet.  You can use a negative number to remove part
         of a bet.
@@ -60,14 +64,14 @@ class Wager(object):
         retval = 0.0
         riding = 0.0
         
-        if point in self.points:
-            retval = self.amount * self.win
-            riding = self.amount
-        else:
-            retval = self.amount * -1
-            riding = 0.0
-        
-        self.amount = riding
+        if self.amount != 0.0:
+            if point in self.points:
+                retval = self.amount * self.win
+                riding = self.amount
+            else:
+                retval = self.amount * -1
+                riding = 0.0    
+            self.amount = riding
         
         return (retval, riding, self.position)
 
@@ -141,16 +145,49 @@ def europeanLayout():
     # And the number that, all by itself, imparts profit
     retval.append( Wager("0", ["0"], 35) )
     
-class Seat(object):
-    """The seat manages one player's place in the game. """
+    return retval
     
-    def __init__(self, factory=europeanLayout, limit=1000):
-        self.limit = limit
+class Seat(object):
+    """The seat manages one player's place in the game.
+    
+    The seat is not in charge of policy -- that is the Game object's job.  But it does have
+    to keep the necessary data on tap.  It is mostly a composite of all possible positions,
+    plus some aggregate amounts.
+    """
+    
+    def __init__(self, factory=europeanLayout):
         self.positions = factory()
         self.amount = 0.0 # the current total the player has on the board
-        self.won = 0
-        self.lost = 0
+        self.won = 0 # cumulative win/loss during this session
         
-    def bet(position, chips):
-        pass
+    def bet(self, position, chips):
+        """Creates a new position, or adds to an existing one."""
+        pos = None
+        for oneWager in self.positions:
+            if oneWager.position == position:
+                pos = oneWager
+                break;
+        if not pos:
+            raise BetInvalidError("{} is not a valid position".format(position))
         
+        (changeAmount, currentAmount) = pos.add(chips)
+        self.amount += changeAmount
+        
+        return (changeAmount, currentAmount, pos.position)
+        
+    def resolve(self, point):
+        changes = []
+        newWinnings = 0.0
+        newAmount = 0.0
+        
+        for pos in self.positions:
+            oneChange = pos.resolve(point)
+            if oneChange[0] != 0:
+                newWinnings += oneChange[0]
+                newAmount += oneChange[1]
+                changes.append(oneChange)
+        
+        self.amount = newAmount
+        self.won += newWinnings
+        
+        return { 'amount':self.amount, 'won':newWinnings, 'changes':changes }

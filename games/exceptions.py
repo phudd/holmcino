@@ -42,11 +42,15 @@ class BetIsFinalError(GameError):
     code = 703
     message = "You can not remove that bet"
 
-class BetInvalidAmount(GameError):
+class BetInvalidAmountError(GameError):
     code = 704
     message = "Bets must be positive floating point numbers"
+
+class BetInvalidError(GameError):
+    code = 705
+    message = "That bet is invalid"
     
 class InsufficientFundsError(GameError):
-    code = 705
+    code = 706
     message = "Insufficient funds"
 

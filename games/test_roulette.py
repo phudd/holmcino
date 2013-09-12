@@ -75,4 +75,55 @@ class TestRouletteWagers(unittest.TestCase):
 	
 	def test_seat(self):
 		s = roulette.Seat()
-	
+		
+		with self.assertRaises(BetInvalidError):
+			s.bet("Bad Wager", 20)
+		
+		self.assertEqual( (20, 20, "Red"), s.bet("Red", 20) )
+		self.assertEqual( (5, 25, "Red"), s.bet("Red", 5) )
+		
+		# outcomes look like { won:float, amount:float, changes:[] }
+		# changes are all (delta, working, position)
+		outcome = s.resolve("1")
+		self.assertEqual( 25, outcome['amount'] )
+		self.assertEqual( 25, outcome['won'] )
+		self.assertTrue( (25.0, 25.0, 'Red') in outcome['changes'] )
+		self.assertEqual( 1, len(outcome['changes']) )
+		self.assertEqual( 25, s.amount )
+		self.assertEqual( 25, s.won )
+		
+		# We have 25 on Red
+		# Let's put a little on a corner, and win with black
+		self.assertEqual( (10, 10, "Corner 7 8 10 11"), s.bet("Corner 7 8 10 11", 10) )
+		self.assertEqual( 35, s.amount )
+
+		# Red will lose (-25), and the corner pays 8:1 (80)
+		outcome = s.resolve("8")
+		self.assertEqual( 55, outcome['won'] )
+		self.assertEqual( 10, outcome['amount'] )
+		self.assertTrue( (-25, 0, "Red") in outcome['changes'] )
+		self.assertTrue( (80, 10, "Corner 7 8 10 11") in outcome['changes'] )
+		self.assertEqual( 2, len(outcome['changes']) )
+		self.assertEqual( 10, s.amount )
+		self.assertEqual( 80, s.won ) # last spin's 25 plus this spin's 55
+		
+		# Take off the red, leave the corner working
+		self.assertEqual( (0, 0, "Red"), s.bet("Red", -100000) )
+		self.assertEqual( 10, s.amount )
+		
+		# And lose our corner
+		outcome = s.resolve("0")
+		self.assertEqual( -10, outcome['won'] )
+		self.assertEqual( 0, outcome['amount'] )
+		self.assertTrue( (-10, 0, 'Corner 7 8 10 11') in outcome['changes'] )
+		self.assertEqual( 1, len(outcome['changes']) )
+		self.assertEqual( 0, s.amount )
+		self.assertEqual( 70, s.won )
+
+		# Nothing ventured, nothing gained
+		outcome = s.resolve("8")
+		self.assertEqual( 0, outcome['won'] )
+		self.assertEqual( 0, outcome['amount'] )
+		self.assertEqual( 0, len(outcome['changes']) )
+		self.assertEqual( 0, s.amount )
+		self.assertEqual( 70, s.won )
