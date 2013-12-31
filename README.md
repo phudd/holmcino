@@ -29,3 +29,9 @@ Next you can go to a Chrome browser and open the console:
 	s.send('bet.pass 10');
 	s.send('roll somestringhere');
 
+
+Running Unit Tests
+==================
+
+	python -m tornado.testing games.test_craps
+	python -m tornado.testing games.test_roulette

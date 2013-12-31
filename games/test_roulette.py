@@ -1,6 +1,8 @@
 import unittest
 from games import roulette
 from games.exceptions import *
+from tornado.testing import AsyncTestCase, gen_test
+from tornado.httpclient import AsyncHTTPClient
 
 class TestRouletteWagers(unittest.TestCase):
 	
@@ -127,3 +129,13 @@ class TestRouletteWagers(unittest.TestCase):
 		self.assertEqual( 0, len(outcome['changes']) )
 		self.assertEqual( 0, s.amount )
 		self.assertEqual( 70, s.won )
+
+
+class TestRouletteGame(AsyncTestCase):
+
+	@gen_test
+	def test_google(self):
+		client = AsyncHTTPClient(self.io_loop)
+		response = yield client.fetch("http://www.google.com")
+		self.assertIn("Google", response.body)
+

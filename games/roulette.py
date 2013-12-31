@@ -191,3 +191,4 @@ class Seat(object):
         self.won += newWinnings
         
         return { 'amount':self.amount, 'won':newWinnings, 'changes':changes }
+
